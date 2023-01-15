@@ -6,20 +6,24 @@ which in turn will display the messages on its standard output.
 
 ## Copile code
 
-    `make`
+    make
 
-## Usage
+## Usage Server
 
 Start the server and get PID to send to client, the client will use this PID to send message beteween them.
 
-    `./server`
+    ./server
+
+This command will start server and print PID of process.
+
+## Usage Client
 
 Start the client and send PID to server, the client will use this PID to send message beteween them.
 
-    `./client PID "MESSSAGE`
+    ./client <PID> "MESSSAGE"
 
 
 ## Example
 
-    `./server`
-    `./client 12345 "Message do you want show in server!`
+    ./server
+    ./client 12345 "Message do you want show in server!
