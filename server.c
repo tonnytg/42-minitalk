@@ -9,19 +9,10 @@ struct Config {
 
 void signal_handler(int sig)
 {
-	// decode signal
-	sigset_t set;
-	struct sigaction act;
-
-	set = 1 >> (sig + 1);
-	sigemptyset(&set);
-	sigaddset(&set, sig);
-	act.sa_mask = set;
-	act.sa_flags = 0;
-	act.__sigaction_u.__sa_handler = NULL;
-	sigaction(sig, &act, NULL);
-
-	printf("Received signal: %d\n", sig);
+	if (sig == SIGUSR1)
+		printf("0\n");
+	if (sig == SIGUSR2)
+		printf("1\n");
 }
 
 int	main(int argc, char **argv)
@@ -31,10 +22,9 @@ int	main(int argc, char **argv)
 
 	pid = getpid();
 	config.delay = argv[1] ? atoi(argv[1]) : 0;
-	printf("Delay: %d\n", config.delay);
+	printf("Server Pid: %d\n", pid);
 	while (config.delay > 0)
 	{
-		printf("Waiting for %d seconds - pid: %d\n", config.delay, pid);
 		signal(SIGUSR1, signal_handler);
 		signal(SIGUSR2, signal_handler);
 		sleep(1);
