@@ -1,36 +1,70 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <signal.h>
+#include "ft_minitalk.h"
 
-int	main(int argc, char **argv)
+void	convert(int nb, char *bit)
 {
-	int p;
-	int err;
-	int msg;
-	sigset_t set;
-	struct sigaction act;
+	int	i;
 
-	if (argc <= 2)
+	i = 0;
+	if (nb == 0 || nb == 1)
 	{
-		printf("Usage: <PID> Message\n");
-		return 1;
+		while (i < 7)
+		{
+			bit[i] = bit[i + 1];
+			i++;
+		}
+		bit[7] = nb + '0';
 	}
-	p = atoi(argv[1]);
-	msg = atoi(argv[2]);
-
-	set = 1 << (msg - 1);
-	sigemptyset(&set);
-	sigaddset(&set, msg);
-	act.sa_mask = set;
-	act.sa_flags = 0;
-	act.__sigaction_u.__sa_handler = NULL;
-	err = sigaction(msg, &act, NULL);
-	if (err)
+	else
 	{
-		printf("Error: %d\n", err);
-		return 1;
+		convert(nb / 2, bit);
+		convert(nb % 2, bit);
 	}
+}
 
-	printf("Sending message to PID: %d\nMSG:%d\n", p, msg);
-	return 0;
+void	sended_str( char *pid, int nb)
+{
+	int		i;
+	char	*bit;
+
+	i = 0;
+	bit = ft_strdup("00000000");
+	convert(nb, bit);
+	while (i < 8)
+	{
+		if (bit[i] == '1')
+			kill(atoi(pid), SIGUSR2);
+		if (bit[i] == '0')
+			kill(atoi(pid), SIGUSR1);
+		i++;
+		usleep(100);
+	}
+	free(bit);
+}
+
+int	main(int ac, char **av)
+{
+	int	i;
+
+	i = 0;
+	if (kill(ft_atoi(av[1]), 0) == -1)
+	{
+		ft_printf("%s OPPPS!! WRONG PID, TRY AGAIN 😐:/ %s\n", RED, END);
+		return (0);
+	}
+	if (ac >= 3)
+	{
+		while (av[2][i])
+		{
+			sended_str(av[1], (unsigned char)av[2][i]);
+			i++;
+		}
+		printf("%s MESSAGE SENT SUCCESSFULLY ✔ 😎:) %s\n", GREEN, END);
+	}
+	else
+	{
+		printf("%s MESSAGE CANT BE SENT 🤒%s\n", RED, END);
+		printf("%sBAD SYNTAX:---> ./client <server_pid> + <text to send>%s\n",
+				  YELLOW, END);
+	}
+	return (0);
 }

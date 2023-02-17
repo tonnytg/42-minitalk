@@ -1,34 +1,59 @@
-#include <stdlib.h>
+#include "ft_minitalk.h"
 #include <stdio.h>
-#include <unistd.h>
-#include <signal.h>
 
-struct Config {
-	int delay;
-};
-
-void signal_handler(int sig)
+int	math_pow(int i)
 {
-	if (sig == SIGUSR1)
-		printf("0\n");
-	if (sig == SIGUSR2)
-		printf("1\n");
+	int	nb;
+
+	nb = 128;
+	while (i < 7)
+	{
+		nb = nb / 2;
+		i++;
+	}
+	return (nb);
 }
 
-int	main(int argc, char **argv)
+static void	signal_handler(int sign, siginfo_t *signalfo, void *oldact)
 {
-	int pid;
-	struct Config config;
+	static int				i;
+	static unsigned char	count;
+	static int				actpid;
 
-	pid = getpid();
-	config.delay = argv[1] ? atoi(argv[1]) : 0;
-	printf("Server Pid: %d\n", pid);
-	while (config.delay > 0)
+	(void)oldact;
+	if (actpid != signalfo->si_pid)
 	{
-		signal(SIGUSR1, signal_handler);
-		signal(SIGUSR2, signal_handler);
-		sleep(1);
-		config.delay--;
+		actpid = signalfo->si_pid;
+		i = 7;
+		count = 0;
 	}
-	printf("Done waiting\n");
+	if (sign == SIGUSR2)
+	{
+		count = count + math_pow(i);
+	}
+	i--;
+	if (i == -1)
+	{
+		printf("%c", count);
+		i = 7;
+		count = 0;
+	}
+}
+
+int	main(void)
+{
+	struct sigaction	act;
+	int					pid;
+
+	act.sa_sigaction = signal_handler;
+	pid = getpid();
+	printf("pid: %d\n", pid);
+	printf("RECEIVED MESSAGES\n\n");
+	while (1)
+	{
+		sigaction(SIGUSR1, &act, NULL);
+		sigaction(SIGUSR2, &act, NULL);
+		pause();
+	}
+	return (0);
 }
