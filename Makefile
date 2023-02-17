@@ -1,27 +1,34 @@
-CLIENT = client
-SERVER = server
-FLAGS = -Wall -Wextra -Werror
-RM = rm -rf
+LIBS    = ./libs
+SRC     = ./src
+SERVER  = $(SRC)/server.c
+CLIENT  = $(SRC)/client.c
 
-all: $(CLIENT) $(SERVER)
+CC = gcc
+CFLAGS = -Wextra -Wall -Werror
 
-$(CLIENT):
-	cc $(FLAGS) client.c -o $(CLIENT)
-$(SERVER):
-	cc $(FLAGS) server.c -o $(SERVER)
+all: server client
+
+server: $(SRC)/server.o
+	$(CC) -o $@ $< -L $(LIBS)/libft -lft
+
+client: $(SRC)/client.o
+	$(CC) -o $@ $< -L $(LIBS)/libft -lft
+
+%.o: %.c
+	make -C $(LIBS)/libft
+	cp $(LIBS)/libft/libft.h $(SRC)/libft.h
+	$(CC) -c $(CFLAGS) $? -o $@
 
 clean:
-	cc $(FLAGS) client.c -o $(CLIENT)
-	cc $(FLAGS) server.c -o $(SERVER)
+	rm -f $(SRC)/*.o
+	make -C $(LIBS)/libft clean
+	
+fclean: clean
+	rm server
+	rm client
+	rm $(SRC)/libft.h
+	rm -f server client $(LIBS)/libft/libft.a
 
-fclean:
-	$(RM) client
-	$(RM) server
-	@printf "$(_WARNING) client removed.\n"
-	@printf "$(_WARNING) server removed.\n"
+re: fclean all
 
-re:
-	cc $(FLAGS) client.c -o $(CLIENT)
-	cc $(FLAGS) server.c -o $(SERVER)
-
-.PHONY: all clean fclean re
+.PHONY: all bonus libft clean fclean re
