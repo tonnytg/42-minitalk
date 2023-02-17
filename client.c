@@ -1,4 +1,7 @@
 #include "ft_minitalk.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 void	convert(int nb, char *bit)
 {
@@ -27,7 +30,7 @@ void	sended_str( char *pid, int nb)
 	char	*bit;
 
 	i = 0;
-	bit = ft_strdup("00000000");
+	bit = strdup("00000000");
 	convert(nb, bit);
 	while (i < 8)
 	{
@@ -46,9 +49,9 @@ int	main(int ac, char **av)
 	int	i;
 
 	i = 0;
-	if (kill(ft_atoi(av[1]), 0) == -1)
+	if (kill(atoi(av[1]), 0) == -1)
 	{
-		ft_printf("%s OPPPS!! WRONG PID, TRY AGAIN 😐:/ %s\n", RED, END);
+		printf("OPPPS!! WRONG PID, TRY AGAIN :/\n");
 		return (0);
 	}
 	if (ac >= 3)
@@ -58,13 +61,12 @@ int	main(int ac, char **av)
 			sended_str(av[1], (unsigned char)av[2][i]);
 			i++;
 		}
-		printf("%s MESSAGE SENT SUCCESSFULLY ✔ 😎:) %s\n", GREEN, END);
+		printf("MESSAGE SENT SUCCESSFULLY ✔:) \n");
 	}
 	else
 	{
-		printf("%s MESSAGE CANT BE SENT 🤒%s\n", RED, END);
-		printf("%sBAD SYNTAX:---> ./client <server_pid> + <text to send>%s\n",
-				  YELLOW, END);
+		printf("MESSAGE CANT BE SENT \n");
+		printf("BAD SYNTAX:---> ./client <server_pid> + <text to send>\n");
 	}
 	return (0);
 }
