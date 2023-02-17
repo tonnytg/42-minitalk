@@ -1,72 +1,104 @@
-#include "ft_minitalk.h"
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   client.c                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: antthoma <antthoma@student.42sp.org.br>    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2023/01/02 23:31:58 by antthoma          #+#    #+#             */
+/*   Updated: 2023/02/17 15:42:48 by antthoma         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
-void	convert(int nb, char *bit)
+#include "minitalk.h"
+
+int	g_control;
+
+void	error_sent(void)
 {
-	int	i;
+	ft_putstr_fd("error to sent\n", 1);
+	exit(1);
+}
 
-	i = 0;
-	if (nb == 0 || nb == 1)
+void	send_sig(char *bits, int pid)
+{
+	int	n;
+
+	n = 0;
+	while (bits[n])
 	{
-		while (i < 7)
+		if (bits[n] == '0')
 		{
-			bit[i] = bit[i + 1];
-			i++;
+			if (kill(pid, SIGUSR1) == -1)
+				error_sent();
 		}
-		bit[7] = nb + '0';
-	}
-	else
-	{
-		convert(nb / 2, bit);
-		convert(nb % 2, bit);
+		else if (bits[n] == '1')
+		{
+			if (kill(pid, SIGUSR2) == -1)
+				error_sent();
+		}
+		while (g_control == 0)
+			;
+		g_control = 0;
+		n++;
 	}
 }
 
-void	sended_str( char *pid, int nb)
+void	char_to_bit(int dec, int pid)
 {
+	char	bits[9];
 	int		i;
-	char	*bit;
 
-	i = 0;
-	bit = strdup("00000000");
-	convert(nb, bit);
-	while (i < 8)
+	ft_bzero(bits, 9);
+	i = 7;
+	while (i >= 0)
 	{
-		if (bit[i] == '1')
-			kill(atoi(pid), SIGUSR2);
-		if (bit[i] == '0')
-			kill(atoi(pid), SIGUSR1);
-		i++;
-		usleep(100);
+		if (dec % 2 == 0)
+			bits[i] = '0';
+		else
+			bits[i] = '1';
+		i--;
+		dec = dec / 2;
 	}
-	free(bit);
+	send_sig(bits, pid);
 }
 
-int	main(int ac, char **av)
+void	client_handler(int signal)
 {
-	int	i;
+	if (signal == SIGUSR2)
+		g_control = 1;
+	else if (signal == SIGUSR1)
+	{
+		ft_putstr_fd("done\n", 1);
+		exit(1);
+	}
+}
+
+int	main(int argc, char **argv)
+{
+	struct sigaction	s_sa;
+	pid_t				pid;
+	int					i;
 
 	i = 0;
-	if (kill(atoi(av[1]), 0) == -1)
+	pid = 0;
+	if (argc != 3 || ft_strisdigit(argv[1]) <= 0)
 	{
-		printf("OPPPS!! WRONG PID, TRY AGAIN :/\n");
+		ft_putstr_fd("./client PID MSG\n", 1);
 		return (0);
 	}
-	if (ac >= 3)
+	pid = ft_atoi(argv[1]);
+	ft_bzero(&s_sa, sizeof(struct sigaction));
+	s_sa.sa_handler = client_handler;
+	if (sigaction(SIGUSR2, &s_sa, NULL))
+		exit(1);
+	if (sigaction(SIGUSR1, &s_sa, NULL))
+		exit(1);
+	while (i < (int)ft_strlen(argv[2]))
 	{
-		while (av[2][i])
-		{
-			sended_str(av[1], (unsigned char)av[2][i]);
-			i++;
-		}
-		printf("MESSAGE SENT SUCCESSFULLY ✔:) \n");
+		char_to_bit((int)argv[2][i], pid);
+		i++;
 	}
-	else
-	{
-		printf("MESSAGE CANT BE SENT \n");
-		printf("BAD SYNTAX:---> ./client <server_pid> + <text to send>\n");
-	}
+	char_to_bit(0, pid);
 	return (0);
 }
