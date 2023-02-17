@@ -1,59 +1,79 @@
-#include "ft_minitalk.h"
-#include <stdio.h>
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   server.c                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: antthoma <antthoma@student.42sp.org.br>    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2023/01/02 23:31:58 by antthoma          #+#    #+#             */
+/*   Updated: 2023/02/17 15:39:14 by antthoma         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
 
-int	math_pow(int i)
+#include "minitalk.h"
+
+int	bits_to_decimal(t_bits *bit)
 {
-	int	nb;
+	unsigned int	decimal;
+	int				i;
 
-	nb = 128;
-	while (i < 7)
+	decimal = 0;
+	i = 0;
+	while (bit->bits[i])
 	{
-		nb = nb / 2;
+		if (bit->bits[i] == '1')
+			decimal += ft_pow(2, 7 - i);
 		i++;
 	}
-	return (nb);
+	return (decimal);
 }
 
-static void	signal_handler(int sign, siginfo_t *signalfo, void *oldact)
+void	server_handler(int signum, siginfo_t *info, void *context)
 {
-	static int				i;
-	static unsigned char	count;
-	static int				actpid;
+	static t_bits	b;
+	char			charac[1];
 
-	(void)oldact;
-	if (actpid != signalfo->si_pid)
+	if (signum == SIGUSR1)
+		b.bits[b.n] = '0';
+	else if (signum == SIGUSR2)
+		b.bits[b.n] = '1';
+	if (b.n == 7)
 	{
-		actpid = signalfo->si_pid;
-		i = 7;
-		count = 0;
+		b.n = 0;
+		charac[0] = (unsigned char)bits_to_decimal(&b);
+		ft_putchar_fd(*charac, 1);
+		if (bits_to_decimal(&b) == 0)
+		{
+			ft_putstr_fd("\n", 1);
+			kill(info->si_pid, SIGUSR1);
+		}			
 	}
-	if (sign == SIGUSR2)
-	{
-		count = count + math_pow(i);
-	}
-	i--;
-	if (i == -1)
-	{
-		printf("%c", count);
-		i = 7;
-		count = 0;
-	}
+	else
+		b.n++;
+	if (kill(info->si_pid, SIGUSR2))
+		exit (1);
+	(void)context;
 }
 
 int	main(void)
 {
-	struct sigaction	act;
-	int					pid;
+	struct sigaction	sa;
+	sigset_t			mask;
 
-	act.sa_sigaction = signal_handler;
-	pid = getpid();
-	printf("pid: %d\n", pid);
-	printf("RECEIVED MESSAGES\n\n");
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGUSR1);
+	sigaddset(&mask, SIGUSR2);
+	sa.sa_mask = mask;
+	sa.sa_flags = SA_SIGINFO;
+	sa.sa_sigaction = server_handler;
+	if (sigaction(SIGUSR1, &sa, NULL))
+		exit(1);
+	if (sigaction(SIGUSR2, &sa, NULL))
+		exit(1);
+	ft_putstr_fd("Server PID: ", 1);
+	ft_putnbr_fd(getpid(), 1);
+	ft_putchar_fd('\n', 1);
 	while (1)
-	{
-		sigaction(SIGUSR1, &act, NULL);
-		sigaction(SIGUSR2, &act, NULL);
 		pause();
-	}
 	return (0);
 }
